@@ -1,31 +1,31 @@
 import os
-from typing import Union
+from typing import Union, Tuple
 
 import numpy as np
 from PIL import Image, ImageDraw
-from moviepy import editor
+from moviepy import *
 from pylsd.lsd import lsd
 
 # static media files
 pkg_path = os.path.dirname(os.path.realpath(__file__))
-video_stick_bug = editor.VideoFileClip(os.path.join(pkg_path, 'media/stick_bug.mp4'))
+video_stick_bug = VideoFileClip(os.path.join(pkg_path, 'media/stick_bug.mp4'))
 audio_notes = [
-    editor.AudioFileClip(os.path.join(pkg_path, 'media/note0.wav')),
-    editor.AudioFileClip(os.path.join(pkg_path, 'media/note1.wav')),
-    editor.AudioFileClip(os.path.join(pkg_path, 'media/note2.wav')),
-    editor.AudioFileClip(os.path.join(pkg_path, 'media/note3.wav')),
-    editor.AudioFileClip(os.path.join(pkg_path, 'media/note4.wav')),
-    editor.AudioFileClip(os.path.join(pkg_path, 'media/note5.wav')),
-    editor.AudioFileClip(os.path.join(pkg_path, 'media/note6.wav')),
-    editor.AudioFileClip(os.path.join(pkg_path, 'media/note7.wav')),
-    editor.AudioFileClip(os.path.join(pkg_path, 'media/note8.wav')),
-    editor.AudioFileClip(os.path.join(pkg_path, 'media/note9.wav')),
+    AudioFileClip(os.path.join(pkg_path, 'media/note0.wav')),
+    AudioFileClip(os.path.join(pkg_path, 'media/note1.wav')),
+    AudioFileClip(os.path.join(pkg_path, 'media/note2.wav')),
+    AudioFileClip(os.path.join(pkg_path, 'media/note3.wav')),
+    AudioFileClip(os.path.join(pkg_path, 'media/note4.wav')),
+    AudioFileClip(os.path.join(pkg_path, 'media/note5.wav')),
+    AudioFileClip(os.path.join(pkg_path, 'media/note6.wav')),
+    AudioFileClip(os.path.join(pkg_path, 'media/note7.wav')),
+    AudioFileClip(os.path.join(pkg_path, 'media/note8.wav')),
+    AudioFileClip(os.path.join(pkg_path, 'media/note9.wav')),
 ]
-audio_transform = editor.AudioFileClip(os.path.join(pkg_path, 'media/transform.wav'))
+audio_transform = AudioFileClip(os.path.join(pkg_path, 'media/transform.wav'))
 
 
 class StickBug:
-    def __init__(self, img: Union[Image.Image, str] = None, video_resolution=(720, 720), lsd_scale=0.8,
+    def __init__(self, img: Union[Image.Image, str] = None, video_resolution: Tuple[int, int] =(720, 720), lsd_scale=0.8,
                  img_bg_color=(0, 0, 0), line_color=(255, 255, 211), line_bg_color=(125, 115, 119)):
         """
         Class that generates a stick bug meme from an image.
@@ -289,7 +289,7 @@ class StickBug:
         # center the image on a black background
         frame = Image.new('RGB', self._video_resolution, self._img_bg_color)
         frame.paste(self._img_scaled, tuple(self._img_offset))
-        clips.append(editor.ImageClip(np.array(frame), duration=1))
+        clips.append(ImageClip(np.array(frame), duration=1))
 
         # line segments start appearing
         # add an ImageClip for each segment
@@ -297,17 +297,17 @@ class StickBug:
         for i in range(segment_frames[0].shape[0]):
             x1, y1, x2, y2, w = segment_frames[0][i]
             draw.line((x1, y1, x2, y2), fill=self._line_color, width=int(w))
-            clips.append(editor.ImageClip(np.array(frame), duration=0.33).set_audio(audio_notes[i]))
+            clips.append(ImageClip(np.array(frame), duration=0.33).with_audio(audio_notes[i]))
 
         # one more slightly longer clip for the last segment
-        clips.append(editor.ImageClip(np.array(frame), duration=1))
+        clips.append(ImageClip(np.array(frame), duration=1))
 
         # redraw lines with the line background color
         draw.rectangle([(0, 0), self._video_resolution], self._line_bg_color)
         for segment in segment_frames[0]:
             x1, y1, x2, y2, w = segment
             draw.line((x1, y1, x2, y2), fill=self._line_color, width=int(w))
-        clips.append(editor.ImageClip(np.array(frame), duration=0.75).set_audio(audio_notes[9]))
+        clips.append(ImageClip(np.array(frame), duration=0.75).with_audio(audio_notes[9]))
 
         # use an ImageSequenceClip for the line interpolation
         interp_frames = []
@@ -317,16 +317,16 @@ class StickBug:
                 x1, y1, x2, y2, w = segment
                 draw.line((x1, y1, x2, y2), fill=self._line_color, width=int(w))
             interp_frames.append(np.asarray(frame))
-        interp_clip = editor.ImageSequenceClip(interp_frames, 30)
-        clips.append(interp_clip.set_audio(audio_transform.set_end(interp_clip.end)))
+        interp_clip = ImageSequenceClip(interp_frames, 30)
+        clips.append(interp_clip.with_audio(audio_transform.with_end(interp_clip.end)))
 
         # concatenate all the clips and add the audio
-        all_clips = editor.concatenate_videoclips(clips)
+        all_clips = concatenate_videoclips(clips)
         # all_clips = all_clips.set_audio(editor.AudioFileClip(audio_path))
 
         # add stick bug video to the end
-        stick_bug_clip = video_stick_bug.resize(stick_bug_scale).set_start(all_clips.end).set_position('center')
-        self._video = editor.CompositeVideoClip([all_clips, stick_bug_clip])
+        stick_bug_clip = video_stick_bug.resized(stick_bug_scale).with_start(all_clips.end).with_position('center')
+        self._video = CompositeVideoClip([all_clips, stick_bug_clip])
 
         self._video_processed = True
 
